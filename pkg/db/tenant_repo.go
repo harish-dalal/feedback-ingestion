@@ -21,11 +21,11 @@ func NewTenantRepository(db *pgxpool.Pool) *TenantRepository {
 // Save saves a new tenant to the database
 func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) error {
 	query := `
-        INSERT INTO tenants (id, name, api_key, active_sources, configurations)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO tenants (id, name, api_key)
+        VALUES ($1, $2, $3)
     `
 
-	_, err := repo.db.Exec(ctx, query, tenant.ID, tenant.Name, tenant.ApiKey, tenant.ActiveSources, tenant.Configurations)
+	_, err := repo.db.Exec(ctx, query, tenant.ID, tenant.Name, tenant.ApiKey)
 	if err != nil {
 		return fmt.Errorf("failed to save tenant: %v", err)
 	}
@@ -35,12 +35,12 @@ func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) e
 
 // Get retrieves a tenant by ID from the database
 func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models.Tenant, error) {
-	query := `SELECT id, name, api_key, active_sources, configurations FROM tenants WHERE id = $1`
+	query := `SELECT id, name, api_key FROM tenants WHERE id = $1`
 
 	tenant := &models.Tenant{}
 	row := repo.db.QueryRow(ctx, query, tenantID)
 
-	err := row.Scan(&tenant.ID, &tenant.Name, &tenant.ApiKey, &tenant.ActiveSources, &tenant.Configurations)
+	err := row.Scan(&tenant.ID, &tenant.Name, &tenant.ApiKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tenant: %v", err)
 	}
@@ -52,11 +52,11 @@ func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models
 func (repo *TenantRepository) Update(ctx context.Context, tenant *models.Tenant) error {
 	query := `
         UPDATE tenants
-        SET name = $2, active_sources = $3, configurations = $4
+        SET name = $2
         WHERE id = $1
     `
 
-	_, err := repo.db.Exec(ctx, query, tenant.ID, tenant.Name, tenant.ActiveSources, tenant.Configurations)
+	_, err := repo.db.Exec(ctx, query, tenant.ID, tenant.Name)
 	if err != nil {
 		return fmt.Errorf("failed to update tenant: %v", err)
 	}

@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -29,8 +30,9 @@ func (h *TenantHandler) CreateTenantHandler(w http.ResponseWriter, r *http.Reque
 	tenant.ID = uuid.New().String()
 	tenant.ApiKey = uuid.New().String()
 
-	if err := h.service.CreateTenant(&tenant); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	ctx := r.Context()
+	if err := h.service.CreateTenant(ctx, &tenant); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create tenant: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -46,9 +48,10 @@ func (h *TenantHandler) GetTenantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	tenant, err := h.service.GetTenant(tenantID)
+	ctx := r.Context()
+	tenant, err := h.service.GetTenant(ctx, tenantID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Failed to retrieve tenant: %v", err), http.StatusNotFound)
 		return
 	}
 
@@ -63,8 +66,14 @@ func (h *TenantHandler) UpdateTenantHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := h.service.UpdateTenant(&tenant); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if tenant.ID == "" {
+		http.Error(w, "Tenant ID is required", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := h.service.UpdateTenant(ctx, &tenant); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update tenant: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -79,8 +88,9 @@ func (h *TenantHandler) DeleteTenantHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := h.service.DeleteTenant(tenantID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	ctx := r.Context()
+	if err := h.service.DeleteTenant(ctx, tenantID); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete tenant: %v", err), http.StatusInternalServerError)
 		return
 	}
 

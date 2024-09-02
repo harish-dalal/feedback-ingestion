@@ -3,7 +3,7 @@ package models
 import "time"
 
 // FeedbackRecord represents the unified structure for feedback
-type FeedbackRecord struct {
+type Feedback struct {
 	ID        string                 `json:"id"`
 	TenantID  string                 `json:"tenant_id"`
 	Source    string                 `json:"source"`

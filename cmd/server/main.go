@@ -1,44 +1,44 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
 
-	"github.com/harish-dalal/feedback-ingestion-system/pkg/adapters"
+	"github.com/harish-dalal/feedback-ingestion-system/pkg/routes"
+	"github.com/harish-dalal/feedback-ingestion-system/pkg/server"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func main() {
-	// Example raw JSON data from Intercom
-	intercomData := []byte(`
-    {
-        "id": "12345",
-        "conversation_id": "conv_123",
-        "created_at": "2023-08-30T12:34:56Z",
-        "conversation_parts": [
-            {
-                "id": "msg_1",
-                "author": {"id": "user_1", "type": "user"},
-                "body": "Hello, I need help!",
-                "created_at": "2023-08-30T12:34:56Z"
-            },
-            {
-                "id": "msg_2",
-                "author": {"id": "agent_1", "type": "admin"},
-                "body": "Sure, how can I assist you?",
-                "created_at": "2023-08-30T12:35:30Z"
-            }
-        ]
-    }`)
+	databaseURL := "postgres://local:local@localhost:5432/fb_ingest"
 
-	// Initialize the IntercomAdapter
-	intercomAdapter := &adapters.IntercomAdapter{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Process the data using the adapter
-	feedbackRecord, err := intercomAdapter.ProcessRawData("tenant1", intercomData)
+	dbpool, err := pgxpool.Connect(ctx, databaseURL)
 	if err != nil {
-		fmt.Printf("Error processing Intercom data: %v\n", err)
-		return
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+	defer dbpool.Close()
+
+	// Create tables if they don't exist
+	if err := server.CreateTables(ctx, dbpool); err != nil {
+		log.Fatalf("Failed to create tables: %v", err)
 	}
 
-	// Print the processed feedback record
-	fmt.Printf("Processed Feedback Record: %+v\n", feedbackRecord)
+	// Initialize the server with routes and database pool
+	srv := server.NewServer(dbpool)
+
+	// Set up routes
+	routes.SetupRoutes(srv)
+
+	// Start the HTTP server
+	port := "8080"
+	fmt.Printf("Server is running on :%s\n", port)
+	if err := http.ListenAndServe(":"+port, srv.Router); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
