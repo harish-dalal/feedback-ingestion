@@ -10,20 +10,17 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// SubscriptionRepository defines methods for managing subscriptions in the PostgreSQL database
 type SubscriptionRepository struct {
 	db *pgxpool.Pool
 }
 
-// NewSubscriptionRepository creates a new SubscriptionRepository
 func NewSubscriptionRepository(db *pgxpool.Pool) *SubscriptionRepository {
 	return &SubscriptionRepository{db: db}
 }
 
-// Create creates a new subscription in the database
 func (repo *SubscriptionRepository) Create(ctx context.Context, sub *models.Subscription) error {
 	query := `
-        INSERT INTO subscriptions (id, tenant_id, app_id, source_id, subscription_mode, configuration, created_at)
+        INSERT INTO subscriptions (id, tenant_id, app_id, source, subscription_mode, configuration, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
     `
 	if sub.ID == "" {
@@ -33,7 +30,7 @@ func (repo *SubscriptionRepository) Create(ctx context.Context, sub *models.Subs
 		sub.CreatedAt = time.Now().UTC()
 	}
 
-	_, err := repo.db.Exec(ctx, query, sub.ID, sub.TenantID, sub.AppID, sub.SourceID, sub.SubscriptionMode, sub.Configuration, sub.CreatedAt)
+	_, err := repo.db.Exec(ctx, query, sub.ID, sub.TenantID, sub.AppID, sub.Source, sub.SubscriptionMode, sub.Configuration, sub.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create subscription: %v", err)
 	}
@@ -41,14 +38,13 @@ func (repo *SubscriptionRepository) Create(ctx context.Context, sub *models.Subs
 	return nil
 }
 
-// Get retrieves a subscription by ID from the database
 func (repo *SubscriptionRepository) Get(ctx context.Context, subscriptionID string) (*models.Subscription, error) {
-	query := `SELECT id, tenant_id, app_id, source_id, subscription_mode, configuration, created_at FROM subscriptions WHERE id = $1`
+	query := `SELECT id, tenant_id, app_id, source, subscription_mode, configuration, created_at FROM subscriptions WHERE id = $1`
 
 	sub := &models.Subscription{}
 	row := repo.db.QueryRow(ctx, query, subscriptionID)
 
-	err := row.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.SourceID, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt)
+	err := row.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.Source, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subscription: %v", err)
 	}
@@ -56,7 +52,6 @@ func (repo *SubscriptionRepository) Get(ctx context.Context, subscriptionID stri
 	return sub, nil
 }
 
-// Delete deletes a subscription by ID from the database
 func (repo *SubscriptionRepository) Delete(ctx context.Context, subscriptionID string) error {
 	query := `DELETE FROM subscriptions WHERE id = $1`
 
@@ -71,9 +66,8 @@ func (repo *SubscriptionRepository) Delete(ctx context.Context, subscriptionID s
 	return nil
 }
 
-// ListByTenantAndApp retrieves all subscriptions for a given tenant and app
 func (repo *SubscriptionRepository) ListByTenantAndApp(ctx context.Context, tenantID, appID string) ([]*models.Subscription, error) {
-	query := `SELECT id, tenant_id, app_id, source_id, subscription_mode, configuration, created_at FROM subscriptions WHERE tenant_id = $1 AND app_id = $2`
+	query := `SELECT id, tenant_id, app_id, source, subscription_mode, configuration, created_at FROM subscriptions WHERE tenant_id = $1 AND app_id = $2`
 
 	rows, err := repo.db.Query(ctx, query, tenantID, appID)
 	if err != nil {
@@ -84,7 +78,7 @@ func (repo *SubscriptionRepository) ListByTenantAndApp(ctx context.Context, tena
 	var subs []*models.Subscription
 	for rows.Next() {
 		sub := &models.Subscription{}
-		if err := rows.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.SourceID, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt); err != nil {
+		if err := rows.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.Source, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan subscription: %v", err)
 		}
 		subs = append(subs, sub)
@@ -98,8 +92,7 @@ func (repo *SubscriptionRepository) ListByTenantAndApp(ctx context.Context, tena
 }
 
 func (repo *SubscriptionRepository) GetAllActivePullSubscriptions(ctx context.Context) ([]*models.Subscription, error) {
-	// Get all active pull subscriptions from the database
-	query := `SELECT id, tenant_id, app_id, source_id, subscription_mode, configuration, created_at FROM subscriptions WHERE subscription_mode = 'pull'`
+	query := `SELECT id, tenant_id, app_id, source, subscription_mode, configuration, created_at FROM subscriptions WHERE subscription_mode = 'pull'`
 
 	rows, err := repo.db.Query(ctx, query)
 	if err != nil {
@@ -110,7 +103,7 @@ func (repo *SubscriptionRepository) GetAllActivePullSubscriptions(ctx context.Co
 	var subs []*models.Subscription
 	for rows.Next() {
 		sub := &models.Subscription{}
-		if err := rows.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.SourceID, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt); err != nil {
+		if err := rows.Scan(&sub.ID, &sub.TenantID, &sub.AppID, &sub.Source, &sub.SubscriptionMode, &sub.Configuration, &sub.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan subscription: %v", err)
 		}
 		subs = append(subs, sub)
@@ -123,7 +116,6 @@ func (repo *SubscriptionRepository) GetAllActivePullSubscriptions(ctx context.Co
 	return subs, nil
 }
 
-// UpdateLastPulled updates the last_pulled timestamp for a subscription.
 func (repo *SubscriptionRepository) UpdateLastPulled(ctx context.Context, subscriptionID string) error {
 	now := time.Now().UTC()
 	query := `UPDATE subscriptions SET last_pulled = $1 WHERE id = $2`

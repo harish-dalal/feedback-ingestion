@@ -6,71 +6,87 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/harish-dalal/feedback-ingestion-system/pkg/feedback"
 	"github.com/harish-dalal/feedback-ingestion-system/pkg/models"
 )
 
 type SourceStrategy interface {
-	Pull(ctx context.Context, sub *models.Subscription) error
-	Push(ctx context.Context, r *http.Request, body []byte) error
-	ProcessRawData(ctx context.Context, tenantID string, data []byte) (*models.Feedback, error)
+	// Pull - pulls the data from the source and saves it to the feedback database
+	Pull(ctx context.Context, sub *models.Subscription) ([]*models.Feedback, error)
+
+	// Push - recives the data from source's webhook and saves it to the feedback database
+	Push(ctx context.Context, r *http.Request, body []byte) ([]*models.Feedback, error)
+
+	// GetSourceName ...
+	GetSourceName() models.Source
+
+	// GetSourceType ...
+	GetSourceType() models.SourceType
 }
 
 type IntegrationManager struct {
-	strategies map[models.SourceType]SourceStrategy
+	strategies      map[models.Source]SourceStrategy
+	feedbackService *feedback.FeedbackService
 }
 
-func NewIntegrationManager(strategies map[models.SourceType]SourceStrategy) *IntegrationManager {
-	return &IntegrationManager{strategies: strategies}
+func NewIntegrationManager(strategies map[models.Source]SourceStrategy, feedbackService *feedback.FeedbackService) *IntegrationManager {
+	return &IntegrationManager{strategies: strategies, feedbackService: feedbackService}
 }
 
-func (m *IntegrationManager) Pull(ctx context.Context, sub *models.Subscription) error {
-	strategy, ok := m.strategies[models.SourceType(sub.SourceID)]
+func (m *IntegrationManager) Pull(ctx context.Context, sub *models.Subscription) ([]*models.Feedback, error) {
+	strategy, ok := m.strategies[models.Source(sub.Source)]
 	if !ok {
-		return fmt.Errorf("no strategy found for source: %s", sub.SourceID)
+		return nil, fmt.Errorf("no strategy found for source: %s", sub.Source)
 	}
-	return strategy.Pull(ctx, sub)
+	feedbacks, err := strategy.Pull(ctx, sub)
+	if err != nil {
+		return nil, fmt.Errorf("failed to pull data from source: %v", err)
+	}
+
+	err = m.feedbacksToDB(feedbacks)
+	if err != nil {
+		// log error
+	}
+
+	return feedbacks, nil
 }
 
-func (m *IntegrationManager) HandleWebhook(w http.ResponseWriter, r *http.Request, source models.SourceType) {
+func (m *IntegrationManager) HandleWebhook(w http.ResponseWriter, r *http.Request, source models.Source) {
 	ctx := r.Context()
 
-	// Step 1: Parse the incoming data
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
 
-	// Step 2: Select strategy and push
 	strategy, ok := m.strategies[source]
 	if !ok {
 		http.Error(w, fmt.Sprintf("no strategy found for source: %s", strategy), http.StatusInternalServerError)
 		return
 	}
 
-	err = strategy.Push(ctx, r, body)
+	feedbacks, err := strategy.Push(ctx, r, body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to process webhook: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Step 3: Respond to the webhook request
+	err = m.feedbacksToDB(feedbacks)
+	if err != nil {
+		// log the error
+	}
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "Discourse webhook received successfully")
 }
 
-// func (m *IntegrationManager) Push(ctx context.Context, r *http.Request, body []byte) error {
-// 	strategy, ok := m.strategies[source]
-// 	if !ok {
-// 		return fmt.Errorf("no strategy found for source: %s", strategy)
-// 	}
-// 	return strategy.Push(ctx, r, body, source)
-// }
-
-func (m *IntegrationManager) ProcessData(ctx context.Context, source models.SourceType, tenantID string, data []byte) (*models.Feedback, error) {
-	strategy, ok := m.strategies[source]
-	if !ok {
-		return nil, fmt.Errorf("no strategy found for source: %s", source)
+func (m *IntegrationManager) feedbacksToDB(feedbacks []*models.Feedback) error {
+	for _, feedback := range feedbacks {
+		err := m.feedbackService.CreateFeedback(context.Background(), feedback)
+		if err != nil {
+			// log error;
+		}
 	}
-	return strategy.ProcessRawData(ctx, tenantID, data)
+	return nil
 }

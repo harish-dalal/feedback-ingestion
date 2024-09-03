@@ -29,7 +29,6 @@ func (h *FeedbackHandler) CreateFeedbackHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Optionally validate TenantID format (UUID)
 	if _, err := uuid.Parse(feedback.TenantID); err != nil {
 		http.Error(w, "Invalid Tenant ID format", http.StatusBadRequest)
 		return
@@ -47,7 +46,6 @@ func (h *FeedbackHandler) CreateFeedbackHandler(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(feedback)
 }
 
-// GetFeedbackHandler handles HTTP requests to retrieve a feedback record by ID
 func (h *FeedbackHandler) GetFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	feedbackID := r.URL.Query().Get("id")
 	if feedbackID == "" {
@@ -65,7 +63,6 @@ func (h *FeedbackHandler) GetFeedbackHandler(w http.ResponseWriter, r *http.Requ
 	json.NewEncoder(w).Encode(record)
 }
 
-// UpdateFeedbackHandler handles HTTP requests to update an existing feedback record
 func (h *FeedbackHandler) UpdateFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	var feedback models.Feedback
 	if err := json.NewDecoder(r.Body).Decode(&feedback); err != nil {
@@ -87,7 +84,6 @@ func (h *FeedbackHandler) UpdateFeedbackHandler(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(feedback)
 }
 
-// DeleteFeedbackHandler handles HTTP requests to delete a feedback record by ID
 func (h *FeedbackHandler) DeleteFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	feedbackID := r.URL.Query().Get("id")
 	if feedbackID == "" {
@@ -104,7 +100,6 @@ func (h *FeedbackHandler) DeleteFeedbackHandler(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ListFeedbackByTenantHandler handles HTTP requests to list all feedback records for a tenant
 func (h *FeedbackHandler) ListFeedbackByTenantHandler(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.URL.Query().Get("tenant_id")
 	if tenantID == "" {

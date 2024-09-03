@@ -1,9 +1,18 @@
 package models
 
+type Source string
+
+const (
+	SourceIntercom  Source = "intercom"
+	SourcePlaystore Source = "playstore"
+	SourceDiscourse Source = "discourse"
+)
+
 type SourceType string
 
 const (
-	STIntercom  SourceType = "intercom"
-	STPlaystore SourceType = "playstore"
-	STDiscourse SourceType = "discourse"
+	STFeedback     SourceType = "feedback"
+	STSurvey       SourceType = "survey"
+	STConversation SourceType = "conversation"
+	STReviews      SourceType = "reviews"
 )

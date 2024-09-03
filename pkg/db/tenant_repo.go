@@ -8,17 +8,14 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// TenantRepository defines methods for managing tenants in the PostgreSQL database
 type TenantRepository struct {
 	db *pgxpool.Pool
 }
 
-// NewTenantRepository creates a new TenantRepository
 func NewTenantRepository(db *pgxpool.Pool) *TenantRepository {
 	return &TenantRepository{db: db}
 }
 
-// Save saves a new tenant to the database
 func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) error {
 	query := `
         INSERT INTO tenants (id, name, api_key)
@@ -33,7 +30,6 @@ func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) e
 	return nil
 }
 
-// Get retrieves a tenant by ID from the database
 func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models.Tenant, error) {
 	query := `SELECT id, name, api_key FROM tenants WHERE id = $1`
 
@@ -48,7 +44,6 @@ func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models
 	return tenant, nil
 }
 
-// Update updates an existing tenant in the database
 func (repo *TenantRepository) Update(ctx context.Context, tenant *models.Tenant) error {
 	query := `
         UPDATE tenants
@@ -64,7 +59,6 @@ func (repo *TenantRepository) Update(ctx context.Context, tenant *models.Tenant)
 	return nil
 }
 
-// Delete deletes a tenant by ID from the database
 func (repo *TenantRepository) Delete(ctx context.Context, tenantID string) error {
 	query := `DELETE FROM tenants WHERE id = $1`
 

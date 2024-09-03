@@ -18,11 +18,10 @@ import (
 
 func SetupRoutes(srv *server.Server) {
 	// Initialize IntegrationManager with strategies
-	strategiesMap := map[models.SourceType]integrations.SourceStrategy{
-		models.STIntercom:  integrations.NewIntercomStrategy(),
-		models.STDiscourse: integrations.NewDiscourseStrategy(),
+	strategiesMap := map[models.Source]integrations.SourceStrategy{
+		models.SourceIntercom:  integrations.NewIntercomStrategy(),
+		models.SourceDiscourse: integrations.NewDiscourseStrategy(),
 	}
-	integrationManager := integrations.NewIntegrationManager(strategiesMap)
 
 	// Tenant handlers
 	tenantRepo := db.NewTenantRepository(srv.DBPool)
@@ -39,6 +38,8 @@ func SetupRoutes(srv *server.Server) {
 	subService := subscription.NewSubscriptionService(subRepo)
 	subHandler := subscription.NewSubscriptionHandler(subService)
 
+	integrationManager := integrations.NewIntegrationManager(strategiesMap, feedbackService)
+
 	// Init cron manager
 	cronManager := cron.NewCronManager(subService, integrationManager)
 	// TODO: need to change timer to 8 hr
@@ -47,12 +48,12 @@ func SetupRoutes(srv *server.Server) {
 		log.Fatalf("Failed to start global pull job: %v", err)
 	}
 
-	// Set up routes
+	// webhooks - need to setup web hook routes for all the sources which can support pull based ingestion
 	srv.Router.HandleFunc("/webhook/discourse", func(w http.ResponseWriter, r *http.Request) {
-		integrationManager.HandleWebhook(w, r, models.STDiscourse)
+		integrationManager.HandleWebhook(w, r, models.SourceDiscourse)
 	})
 	srv.Router.HandleFunc("/webhook/intercom", func(w http.ResponseWriter, r *http.Request) {
-		integrationManager.HandleWebhook(w, r, models.STIntercom)
+		integrationManager.HandleWebhook(w, r, models.SourceIntercom)
 	})
 
 	// Health check

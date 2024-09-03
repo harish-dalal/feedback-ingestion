@@ -40,7 +40,6 @@ func (repo *FeedbackRepository) Save(ctx context.Context, feedback *models.Feedb
 	return nil
 }
 
-// Get retrieves a feedback record by ID from the database
 func (repo *FeedbackRepository) Get(ctx context.Context, feedbackID string) (*models.Feedback, error) {
 	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback_records WHERE id = $1`
 
@@ -55,7 +54,6 @@ func (repo *FeedbackRepository) Get(ctx context.Context, feedbackID string) (*mo
 	return record, nil
 }
 
-// Update updates an existing feedback record in the database
 func (repo *FeedbackRepository) Update(ctx context.Context, feedback *models.Feedback) error {
 	query := `
         UPDATE feedback_records
@@ -75,7 +73,6 @@ func (repo *FeedbackRepository) Update(ctx context.Context, feedback *models.Fee
 	return nil
 }
 
-// Delete deletes a feedback record by ID from the database
 func (repo *FeedbackRepository) Delete(ctx context.Context, feedbackID string) error {
 	query := `DELETE FROM feedback_records WHERE id = $1`
 
@@ -90,7 +87,6 @@ func (repo *FeedbackRepository) Delete(ctx context.Context, feedbackID string) e
 	return nil
 }
 
-// ListByTenant retrieves all feedback records for a given tenant
 func (repo *FeedbackRepository) ListByTenant(ctx context.Context, tenantID string) ([]*models.Feedback, error) {
 	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback_records WHERE tenant_id = $1 ORDER BY created_at DESC`
 

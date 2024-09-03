@@ -18,6 +18,7 @@ func CreateTables(ctx context.Context, dbpool *pgxpool.Pool) error {
 		`CREATE TABLE IF NOT EXISTS feedback (
 			id UUID PRIMARY KEY,
 			tenant_id UUID NOT NULL,
+			sub_source_id UUID NOT NULL,
 			source TEXT NOT NULL,
 			type TEXT NOT NULL,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -34,7 +35,7 @@ func CreateTables(ctx context.Context, dbpool *pgxpool.Pool) error {
 			id UUID PRIMARY KEY,
 			tenant_id UUID NOT NULL,
 			app_id UUID NOT NULL,
-			source_id UUID NOT NULL,
+			source TEXT NOT NULL,
 			subscription_mode TEXT NOT NULL CHECK (subscription_mode IN ('push', 'pull')),
 			configuration JSONB,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
