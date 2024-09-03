@@ -25,7 +25,7 @@ func NewCronManager(subService *subscription.SubscriptionService, integrationMan
 }
 
 func (cm *CronManager) StartGlobalPullJob(ctx context.Context, interval time.Duration) error {
-	_, err := cm.cron.AddFunc(fmt.Sprintf("@every %s", interval.String()), func() {
+	jobFunc := func() {
 		subscriptions, err := cm.subService.GetAllActivePullSubscriptions(ctx)
 		if err != nil {
 			fmt.Printf("Failed to query subscriptions: %v\n", err)
@@ -46,7 +46,11 @@ func (cm *CronManager) StartGlobalPullJob(ctx context.Context, interval time.Dur
 				}
 			}
 		}
-	})
+	}
+
+	go jobFunc()
+
+	_, err := cm.cron.AddFunc(fmt.Sprintf("@every %s", interval.String()), jobFunc)
 	if err != nil {
 		return fmt.Errorf("failed to schedule global cron job: %v", err)
 	}

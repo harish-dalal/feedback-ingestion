@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Go Application",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go", // Adjust this if your main.go is not at the root
+            "env": {},
+            "args": [],
+            // "showLog": true
+        }
+    ]
+}

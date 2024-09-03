@@ -24,8 +24,8 @@ func (h *SubscriptionHandler) CreateSubscriptionHandler(w http.ResponseWriter, r
 		return
 	}
 
-	if sub.TenantID == "" || sub.AppID == "" || sub.Source == "" || sub.SubscriptionMode == "" {
-		http.Error(w, "TenantID, AppID, SourceID, and SubscriptionMode are required", http.StatusBadRequest)
+	if sub.TenantID == "" || sub.SubSourceId == "" || sub.Source == "" || sub.SubscriptionMode == "" {
+		http.Error(w, "TenantID, SubSourceId, SourceID, and SubscriptionMode are required", http.StatusBadRequest)
 		return
 	}
 

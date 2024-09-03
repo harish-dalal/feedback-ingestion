@@ -18,7 +18,7 @@ func NewTenantRepository(db *pgxpool.Pool) *TenantRepository {
 
 func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) error {
 	query := `
-        INSERT INTO tenants (id, name, api_key)
+        INSERT INTO tenant (id, name, api_key)
         VALUES ($1, $2, $3)
     `
 
@@ -31,7 +31,7 @@ func (repo *TenantRepository) Save(ctx context.Context, tenant *models.Tenant) e
 }
 
 func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models.Tenant, error) {
-	query := `SELECT id, name, api_key FROM tenants WHERE id = $1`
+	query := `SELECT id, name, api_key FROM tenant WHERE id = $1`
 
 	tenant := &models.Tenant{}
 	row := repo.db.QueryRow(ctx, query, tenantID)
@@ -46,7 +46,7 @@ func (repo *TenantRepository) Get(ctx context.Context, tenantID string) (*models
 
 func (repo *TenantRepository) Update(ctx context.Context, tenant *models.Tenant) error {
 	query := `
-        UPDATE tenants
+        UPDATE tenant
         SET name = $2
         WHERE id = $1
     `
@@ -60,7 +60,7 @@ func (repo *TenantRepository) Update(ctx context.Context, tenant *models.Tenant)
 }
 
 func (repo *TenantRepository) Delete(ctx context.Context, tenantID string) error {
-	query := `DELETE FROM tenants WHERE id = $1`
+	query := `DELETE FROM tenant WHERE id = $1`
 
 	_, err := repo.db.Exec(ctx, query, tenantID)
 	if err != nil {

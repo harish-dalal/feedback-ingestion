@@ -20,8 +20,8 @@ func NewFeedbackRepository(db *pgxpool.Pool) *FeedbackRepository {
 
 func (repo *FeedbackRepository) Save(ctx context.Context, feedback *models.Feedback) error {
 	query := `
-        INSERT INTO feedback_records (id, tenant_id, content, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO feedback (id, tenant_id, source, sub_source_id, source_type, created_at, updated_at, metadata, content)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `
 
 	if feedback.ID == "" {
@@ -32,7 +32,7 @@ func (repo *FeedbackRepository) Save(ctx context.Context, feedback *models.Feedb
 	}
 	feedback.UpdatedAt = time.Now().UTC()
 
-	_, err := repo.db.Exec(ctx, query, feedback.ID, feedback.TenantID, feedback.Content, feedback.CreatedAt, feedback.UpdatedAt)
+	_, err := repo.db.Exec(ctx, query, feedback.ID, feedback.TenantID, feedback.Source, feedback.SubSourceID, feedback.SourceType, feedback.CreatedAt, feedback.UpdatedAt, feedback.Metadata, feedback.Content)
 	if err != nil {
 		return fmt.Errorf("failed to save feedback %v", err)
 	}
@@ -41,7 +41,7 @@ func (repo *FeedbackRepository) Save(ctx context.Context, feedback *models.Feedb
 }
 
 func (repo *FeedbackRepository) Get(ctx context.Context, feedbackID string) (*models.Feedback, error) {
-	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback_records WHERE id = $1`
+	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback WHERE id = $1`
 
 	record := &models.Feedback{}
 	row := repo.db.QueryRow(ctx, query, feedbackID)
@@ -56,7 +56,7 @@ func (repo *FeedbackRepository) Get(ctx context.Context, feedbackID string) (*mo
 
 func (repo *FeedbackRepository) Update(ctx context.Context, feedback *models.Feedback) error {
 	query := `
-        UPDATE feedback_records
+        UPDATE feedback
         SET content = $2, updated_at = $3
         WHERE id = $1
     `
@@ -74,7 +74,7 @@ func (repo *FeedbackRepository) Update(ctx context.Context, feedback *models.Fee
 }
 
 func (repo *FeedbackRepository) Delete(ctx context.Context, feedbackID string) error {
-	query := `DELETE FROM feedback_records WHERE id = $1`
+	query := `DELETE FROM feedback WHERE id = $1`
 
 	cmdTag, err := repo.db.Exec(ctx, query, feedbackID)
 	if err != nil {
@@ -88,7 +88,7 @@ func (repo *FeedbackRepository) Delete(ctx context.Context, feedbackID string) e
 }
 
 func (repo *FeedbackRepository) ListByTenant(ctx context.Context, tenantID string) ([]*models.Feedback, error) {
-	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback_records WHERE tenant_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, tenant_id, content, created_at, updated_at FROM feedback WHERE tenant_id = $1 ORDER BY created_at DESC`
 
 	rows, err := repo.db.Query(ctx, query, tenantID)
 	if err != nil {

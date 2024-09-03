@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/harish-dalal/feedback-ingestion-system/pkg/models"
@@ -57,21 +58,49 @@ func (s *DiscourseIntegration) Pull(ctx context.Context, sub *models.Subscriptio
 		return nil, fmt.Errorf("failed to unmarshal discourse search results: %v", err)
 	}
 
-	var feedbacks []*models.Feedback
+	searchResults.Posts = searchResults.Posts[:3]
+
+	var (
+		feedbacks []*models.Feedback
+		mutex     sync.Mutex
+		wg        sync.WaitGroup
+	)
+
 	for _, post := range searchResults.Posts {
-		feedback, err := s.processPullPost(ctx, post.ID, post.TopicID, sub.TenantID)
-		if err != nil {
-			fmt.Printf("Failed to process post ID %d: %v\n", post.ID, err)
-			continue
-		}
-		feedbacks = append(feedbacks, feedback...)
+		wg.Add(1)
+		go func(post struct {
+			ID         int    `json:"id"`
+			TopicID    int    `json:"topic_id"`
+			CreatedAt  string `json:"created_at"`
+			Blurb      string `json:"blurb"`
+			Username   string `json:"username"`
+			TopicTitle string `json:"topic_title_headline"`
+		}) {
+			defer wg.Done()
+
+			// Create a new context with a specific timeout for each post
+			postCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+
+			feedback, err := s.processPullPost(postCtx, post.ID, post.TopicID, sub)
+			if err != nil {
+				fmt.Printf("Failed to process post ID %d: %v\n", post.ID, err)
+				return
+			}
+
+			// Safely append to feedbacks slice
+			mutex.Lock()
+			feedbacks = append(feedbacks, feedback...)
+			mutex.Unlock()
+		}(post)
 	}
 
+	wg.Wait()
 	fmt.Println("Successfully pulled and processed data from Discourse")
 	return feedbacks, nil
 }
 
-func (s *DiscourseIntegration) processPullPost(ctx context.Context, postID, topicID int, tenantID string) ([]*models.Feedback, error) {
+func (s *DiscourseIntegration) processPullPost(ctx context.Context, postID, topicID int, sub *models.Subscription) ([]*models.Feedback, error) {
 	url := fmt.Sprintf("https://meta.discourse.org/t/%d/posts.json?post_ids[]=%d", topicID, postID)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -117,13 +146,16 @@ func (s *DiscourseIntegration) processPullPost(ctx context.Context, postID, topi
 	post := postResponse.PostStream.Posts[0]
 
 	feedback := &models.Feedback{
-		ID:        fmt.Sprintf("%d", post.ID),
-		TenantID:  tenantID,
-		Source:    models.SourceDiscourse,
-		Type:      "Post",
-		Content:   post.Cooked,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:          fmt.Sprintf("%d", post.ID),
+		TenantID:    sub.TenantID,
+		SubSourceID: sub.SubSourceId,
+		Source:      s.GetSourceName(),
+		SourceType:  s.GetSourceType(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Content: map[string]interface{}{
+			"body": post.Cooked,
+		},
 		Metadata: map[string]interface{}{
 			"username":   post.Username,
 			"topic_id":   post.TopicID,

@@ -43,7 +43,7 @@ func SetupRoutes(srv *server.Server) {
 	// Init cron manager
 	cronManager := cron.NewCronManager(subService, integrationManager)
 	// TODO: need to change timer to 8 hr
-	err := cronManager.StartGlobalPullJob(context.Background(), 5*time.Second)
+	err := cronManager.StartGlobalPullJob(context.Background(), 8*time.Hour)
 	if err != nil {
 		log.Fatalf("Failed to start global pull job: %v", err)
 	}
@@ -62,10 +62,10 @@ func SetupRoutes(srv *server.Server) {
 	})
 
 	// Tenant CRUD routes
-	srv.Router.HandleFunc("/tenants", tenantHandler.CreateTenantHandler)
-	srv.Router.HandleFunc("/tenants/get", tenantHandler.GetTenantHandler)
-	srv.Router.HandleFunc("/tenants/update", tenantHandler.UpdateTenantHandler)
-	srv.Router.HandleFunc("/tenants/delete", tenantHandler.DeleteTenantHandler)
+	srv.Router.HandleFunc("/tenant", tenantHandler.CreateTenantHandler)
+	srv.Router.HandleFunc("/tenant/get", tenantHandler.GetTenantHandler)
+	srv.Router.HandleFunc("/tenant/update", tenantHandler.UpdateTenantHandler)
+	srv.Router.HandleFunc("/tenant/delete", tenantHandler.DeleteTenantHandler)
 
 	// Feedback CRUD routes
 	srv.Router.HandleFunc("/feedback", feedbackHandler.CreateFeedbackHandler)
@@ -75,5 +75,5 @@ func SetupRoutes(srv *server.Server) {
 	srv.Router.HandleFunc("/feedback/list", feedbackHandler.ListFeedbackByTenantHandler)
 
 	// Subscription CRUD routes
-	srv.Router.HandleFunc("/subscriptions", subHandler.CreateSubscriptionHandler)
+	srv.Router.HandleFunc("/subscription", subHandler.CreateSubscriptionHandler)
 }

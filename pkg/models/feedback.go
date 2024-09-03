@@ -7,7 +7,7 @@ type Feedback struct {
 	TenantID    string                 `json:"tenant_id"`
 	Source      Source                 `json:"source"`
 	SubSourceID string                 `json:"sub_source_id"` // defining either tag / app or relevant identifier
-	Type        string                 `json:"type"`
+	SourceType  SourceType             `json:"source_type"`
 	CreatedAt   time.Time              `json:"created_at"`
 	UpdatedAt   time.Time              `json:"updated_at"`
 	Metadata    map[string]interface{} `json:"metadata"`

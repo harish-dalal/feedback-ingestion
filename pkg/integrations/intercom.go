@@ -71,7 +71,7 @@ func (a *IntercomIntegration) processPushRawData(ctx context.Context, tenantID s
 		TenantID:    tenantID,
 		SubSourceID: SubSourceID,
 		Source:      a.GetSourceName(),
-		Type:        "Conversation",
+		SourceType:  a.GetSourceType(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		Metadata:    map[string]interface{}{},
