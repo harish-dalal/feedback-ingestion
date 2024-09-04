@@ -19,10 +19,10 @@ from two different Playstore Apps for the same tenant ✅ - 2 different subscrip
 
 ### DB design
 
-![db design](https://i.ibb.co/JqSqkj7/fb-ingest-public.png)
+![db design](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb_ingest_db.png?raw=true)
 ### High level design
 
-![High level design]([https://i.ibb.co/MpSCJWP/fb-ingest-excali.png](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb-ingest-excali.png))
+![High level design](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb-ingest-excali.png?raw=true)
 ### Add source
 - Define source and its type in ```pkg/models/source.go```
 - Create the new source strategy in the ```feedback-ingestion-system/pkg/integrations ```
