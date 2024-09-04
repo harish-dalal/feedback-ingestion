@@ -23,14 +23,17 @@ func (s *IntercomIntegration) Pull(ctx context.Context, sub *models.Subscription
 
 func (s *IntercomIntegration) Push(ctx context.Context, r *http.Request, body []byte) ([]*models.Feedback, error) {
 	tenantID := r.URL.Query().Get("tenant_id")
-	SubSourceID := r.URL.Query().Get("app_id")
+	subSourceID := r.URL.Query().Get("app_id")
+
+	// check if tenant has a subscriptions
+	// by tenantID, source, subSourceId
 
 	var webhookEvent map[string]interface{}
 	if err := json.Unmarshal(body, &webhookEvent); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal webhook data: %v", err)
 	}
 
-	feedback, err := s.processPushRawData(ctx, tenantID, SubSourceID, body)
+	feedback, err := s.processPushRawData(ctx, tenantID, subSourceID, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process Discourse webhook data: %v", err)
 	}

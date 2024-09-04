@@ -48,7 +48,7 @@ func SetupRoutes(srv *server.Server) {
 		log.Fatalf("Failed to start global pull job: %v", err)
 	}
 
-	// webhooks - need to setup web hook routes for all the sources which can support pull based ingestion
+	// webhooks - need to setup web hook routes for all the sources which can support push based ingestion
 	srv.Router.HandleFunc("/webhook/discourse", func(w http.ResponseWriter, r *http.Request) {
 		integrationManager.HandleWebhook(w, r, models.SourceDiscourse)
 	})

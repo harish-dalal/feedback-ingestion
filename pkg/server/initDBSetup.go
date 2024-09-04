@@ -47,6 +47,11 @@ func CreateTables(ctx context.Context, dbpool *pgxpool.Pool) error {
 			  REFERENCES tenant(id)
 			  ON DELETE CASCADE
 		);`,
+
+		// Insert a default tenant if not already exists
+		`INSERT INTO tenant (id, name, api_key)
+		 VALUES ('cb4d81c7-e1bf-4ca5-900f-665a0e3fc932', 'Default Tenant', '3eaa4c4a-2271-45b1-8df0-81a4bd64251b')
+		 ON CONFLICT (id) DO NOTHING;`,
 	}
 
 	for _, query := range queries {
