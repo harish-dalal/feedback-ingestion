@@ -56,7 +56,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd feedback-ingestion-system
+  cd feedback-ingestion
 ```
 
 Start the server
