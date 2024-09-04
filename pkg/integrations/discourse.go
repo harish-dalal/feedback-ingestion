@@ -78,7 +78,6 @@ func (s *DiscourseIntegration) Pull(ctx context.Context, sub *models.Subscriptio
 		}) {
 			defer wg.Done()
 
-			// Create a new context with a specific timeout for each post
 			postCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 
@@ -88,7 +87,6 @@ func (s *DiscourseIntegration) Pull(ctx context.Context, sub *models.Subscriptio
 				return
 			}
 
-			// Safely append to feedbacks slice
 			mutex.Lock()
 			feedbacks = append(feedbacks, feedback...)
 			mutex.Unlock()

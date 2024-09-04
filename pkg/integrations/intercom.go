@@ -25,6 +25,7 @@ func (s *IntercomIntegration) Push(ctx context.Context, r *http.Request, body []
 	tenantID := r.URL.Query().Get("tenant_id")
 	subSourceID := r.URL.Query().Get("app_id")
 
+	// TODO
 	// check if tenant has a subscriptions
 	// by tenantID, source, subSourceId
 
@@ -68,7 +69,6 @@ func (a *IntercomIntegration) processPushRawData(ctx context.Context, tenantID s
 		Messages:       messages,
 	}
 
-	// Create and return the FeedbackRecord
 	return &models.Feedback{
 		ID:          intercomData.ID,
 		TenantID:    tenantID,
