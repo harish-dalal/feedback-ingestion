@@ -1,28 +1,28 @@
 
 # Feedback ingestion
 
-Feedback ingestion service handles pull and pushed based subscriptions to ingest feedback from the default sources
+The feedback ingestion service handles pull and push-based subscriptions to ingest feedback from the default sources
 ### Requirements
 - Push and Pull Integration Model ✅
 - Metadata Ingestion: each source can have different types of metadata values, e.g. app-version from Playstore, Country from Twitter, etc. ✅
 - Multi-tenancy ✅
 - Transformation to a uniform internal structure, which should ✅
-    - Support different type of feedback data e.g Reviews, Conversations etc
+    - Support different types of feedback data e.g Reviews, Conversations, etc
     - Support source-specific metadata
     - Have common record-level attributes like record language, tenant info, source info, etc
 
 **Good to have**
-- Idempotency: Ability to de-dupe ingested feedbacks ✅ - handled as for same tenantId, source, sub_source the feedback cannot be ingested twice
+- Idempotency: Ability to de-dupe ingested feedbacks ✅ - handled as for the same tenantId, source, sub_source the feedback cannot be ingested twice
 
 - Supporting multiple feedback sources of the same type for a tenant, e.g feedback
-from two different Playstore Apps for the same tenant ✅ - 2 different subscriptions can be created for same source and tenant by different sub_source_id
+from two different Playstore Apps for the same tenant ✅ - 2 different subscriptions can be created for the same source and tenant by different sub_source_id
 
 ### DB design
 
 ![db design](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb_ingest_db.png?raw=true)
-### High level design
+### High-level design
 
-![High level design](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb-ingest-excali.png?raw=true)
+![High-level design](https://github.com/harish-dalal/feedback-ingestion/blob/main/assets/fb-ingest-excali.png?raw=true)
 ### Add source
 - Define source and its type in ```pkg/models/source.go```
 - Create the new source strategy in the ```feedback-ingestion-system/pkg/integrations ```
@@ -30,7 +30,7 @@ from two different Playstore Apps for the same tenant ✅ - 2 different subscrip
 - Add the new strategy (integration) in the strategiesMap defined in ```pkg/routes/routes.go```
 - If the source supports Push (webhook), define the route in ```pkg/routes/routes.go``` for e.g. 
 ```
-// webhooks - need to setup web hook routes for all the sources which can support push based ingestion
+// webhooks - need to set webhook routes for all the sources that can support push-based ingestion
 	srv.Router.HandleFunc("/webhook/intercom", func(w http.ResponseWriter, r *http.Request) {
 		integrationManager.HandleWebhook(w, r, models.SourceIntercom)
 	})
@@ -44,7 +44,7 @@ from two different Playstore Apps for the same tenant ✅ - 2 different subscrip
 - Install and setup Postgres - https://www.postgresql.org/download/
     - username - **local** and password - **local**
     - create ```fb_ingest``` database
-    - run postgres on _localhost:5432_ (default)
+    - run Postgres on _localhost:5432_ (default)
 
 
 Clone the project
@@ -65,25 +65,25 @@ Start the server
   go run cmd/server/main.go
 ```
 
-By default a tenant is created for creating a subscription on it, but a new tenant can also be created by calling the create tenant api provided in the postman import file below
+By default, a tenant is created for creating a subscription on it, but a new tenant can also be made by calling the create tenant API provided in the Postman import file below
 
 postman import file - https://drive.google.com/uc?export=download&id=1a_sXBfVT0nU1XuhIL6GXjG0t9IZSrZrI
 
 Default tenant ```cb4d81c7-e1bf-4ca5-900f-665a0e3fc932```
 
-- From the postman apis 
+- From the postman APIs 
 - ```Call the Subscription/create subscription```
-- this will create a pull based subscription on the default tenant for the source Discourse   
+- this will create a pull-based subscription on the default tenant for the source Discourse   
 
-As while starting the server the first cron job would have already completed, there are 2 ways to see the subscription effect
-- Either to wait for 8 hours, so that next cron job could run. (not possible)
+As while starting the server the first cron job would have already been completed, there are 2 ways to see the subscription effect
+- Either to wait for 8 hours, so that the next cron job could run. (not possible)
 - Restart the service
 ```bash
   go run cmd/server/main.go
 ``` 
 this will again trigger the first cron job
 
-Check the feedback api - Get feedbacks for tenant - it should contain 3 feedbacks from discourse (restricting to 3 post for not overloading the system)
+Check the feedback API - Get feedback for tenant - it should contain 3 feedbacks from discourse (restricting to 3 posts for not overloading the system)
 
 sample response (trimmed to fit)
 
@@ -136,6 +136,6 @@ sample response (trimmed to fit)
 
 
 ## Future scope
-- Make cron stateful to handle service restarts and also to run on separate multiple instances.
-- Extract source (source and source type) to be fetched from config.
+- Make cron stateful to handle service restarts and run on multiple separate instances.
+- Extract source (source and source type) to be fetched from config or a separate db table to make it less painful to update an existing Source name - which relates to other tables like Subscription.
 - more to come...
